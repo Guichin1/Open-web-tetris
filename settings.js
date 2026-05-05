@@ -7,14 +7,14 @@
 const STORAGE_KEY = 'tetris_settings_v1';
 
 export const DEFAULT_KEYBINDS = {
-  moveLeft:    'ArrowLeft',
-  moveRight:   'ArrowRight',
-  softDrop:    'ArrowDown',
+  moveLeft:    'KeyA',
+  moveRight:   'KeyD',
+  softDrop:    'KeyS',
   hardDrop:    'Space',
-  rotateCW:    'KeyX',
-  rotateCCW:   'KeyZ',
-  rotate180:   'KeyA',
-  hold:        'KeyC',
+  rotateCW:    'KeyK',
+  rotateCCW:   'KeyJ',
+  rotate180:   'KeyL',
+  hold:        'KeyI',
   pause:       'Escape',
   restart:     'F1',
   settings:    'Tab',

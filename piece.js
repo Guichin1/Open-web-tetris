@@ -107,11 +107,11 @@ PIECE_SHAPES.L = [
 PIECE_SHAPES.L[3] = [[0,1],[1,1],[2,0],[2,1]];
 
 // And J state R should be:
-// . X .
-// . X .
 // . X X
-// = [0,1],[1,1],[2,1],[2,2]
-PIECE_SHAPES.J[1] = [[0,1],[1,1],[2,1],[2,2]];
+// . X .
+// . X .
+// = [0,1],[0,2],[1,1],[2,1]
+PIECE_SHAPES.J[1] = [[0,1],[0,2],[1,1],[2,1]];
 
 /**
  * Verified SRS Wall Kicks from Tetris wiki (using [col,row] offsets, row=positive=UP in standard).
