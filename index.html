@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TETRIS — Guideline Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- LEFT PANEL: HOLD + STATS -->
+    <aside id="panel-left">
+      <div class="panel-block">
+        <div class="panel-label">HOLD</div>
+        <canvas id="canvas-hold" width="120" height="120"></canvas>
+      </div>
+      <div class="panel-block">
+        <div class="panel-label">SCORE</div>
+        <div class="panel-value" id="score">0</div>
+      </div>
+      <div class="panel-block">
+        <div class="panel-label">BEST</div>
+        <div class="panel-value" id="highscore">0</div>
+      </div>
+      <div class="panel-block">
+        <div class="panel-label">LEVEL</div>
+        <div class="panel-value" id="level">1</div>
+      </div>
+      <div class="panel-block">
+        <div class="panel-label">LINES</div>
+        <div class="panel-value" id="lines">0</div>
+      </div>
+      <div class="panel-block" id="block-b2b" style="display:none">
+        <div class="panel-label b2b-label">B2B ×<span id="b2b-count">0</span></div>
+      </div>
+      <div class="panel-block" id="block-combo" style="display:none">
+        <div class="panel-label">COMBO</div>
+        <div class="panel-value combo-value" id="combo">×0</div>
+      </div>
+    </aside>
+
+    <!-- CENTER: BOARD -->
+    <main id="board-wrapper">
+      <canvas id="canvas-board"></canvas>
+      <div id="action-label"></div>
+
+      <div id="overlay-start" class="overlay">
+        <div class="overlay-box">
+          <div class="overlay-logo">TETRIS</div>
+          <div class="overlay-subtitle">GUIDELINE EDITION</div>
+          <button class="btn-primary" id="btn-start">▶ PLAY</button>
+          <button class="btn-secondary" id="btn-settings-start">⚙ SETTINGS</button>
+        </div>
+      </div>
+
+      <div id="overlay-pause" class="overlay hidden">
+        <div class="overlay-box">
+          <div class="overlay-logo">PAUSED</div>
+          <button class="btn-primary" id="btn-resume">▶ RESUME</button>
+          <button class="btn-secondary" id="btn-restart-pause">↺ RESTART</button>
+          <button class="btn-secondary" id="btn-settings-pause">⚙ SETTINGS</button>
+        </div>
+      </div>
+
+      <div id="overlay-gameover" class="overlay hidden">
+        <div class="overlay-box">
+          <div class="overlay-logo">GAME OVER</div>
+          <div class="go-score-label">SCORE</div>
+          <div class="go-score-value" id="go-score">0</div>
+          <button class="btn-primary" id="btn-restart-go">↺ PLAY AGAIN</button>
+          <button class="btn-secondary" id="btn-menu-go">⌂ MENU</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT PANEL: NEXT -->
+    <aside id="panel-right">
+      <div class="panel-block">
+        <div class="panel-label">NEXT</div>
+        <canvas id="canvas-next" width="120" height="600"></canvas>
+      </div>
+      <div class="panel-block controls-hint">
+        <div class="panel-label">CONTROLS</div>
+        <div class="hint-row"><span class="hint-key">←→</span><span>Move</span></div>
+        <div class="hint-row"><span class="hint-key">↑ / X</span><span>Rotate CW</span></div>
+        <div class="hint-row"><span class="hint-key">Z</span><span>Rotate CCW</span></div>
+        <div class="hint-row"><span class="hint-key">A</span><span>Rotate 180</span></div>
+        <div class="hint-row"><span class="hint-key">↓</span><span>Soft Drop</span></div>
+        <div class="hint-row"><span class="hint-key">SPC</span><span>Hard Drop</span></div>
+        <div class="hint-row"><span class="hint-key">C / SHF</span><span>Hold</span></div>
+        <div class="hint-row"><span class="hint-key">ESC</span><span>Pause</span></div>
+        <div class="hint-row"><span class="hint-key">F1</span><span>Restart</span></div>
+        <div class="hint-row"><span class="hint-key">TAB</span><span>Settings</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="modal-settings" class="hidden">
+    <div id="modal-backdrop"></div>
+    <div id="modal-content">
+      <div id="modal-header">
+        <span id="modal-title">SETTINGS</span>
+        <button id="btn-close-settings">✕</button>
+      </div>
+      <div id="settings-tabs">
+        <button class="tab-btn active" data-tab="handling">HANDLING</button>
+        <button class="tab-btn" data-tab="keybinds">KEYBINDS</button>
+      </div>
+
+      <!-- HANDLING TAB -->
+      <div id="tab-handling" class="tab-panel">
+        <div class="setting-row">
+          <div class="setting-label">
+            <span class="setting-abbr">DAS</span>
+            <span class="setting-desc">Delayed Auto Shift</span>
+          </div>
+          <div class="setting-control">
+            <input type="range" id="das-slider" min="0" max="300" step="1" />
+            <input type="number" id="das-input" min="0" max="300" />
+            <span class="setting-unit">ms</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">
+            <span class="setting-abbr">ARR</span>
+            <span class="setting-desc">Auto Repeat Rate</span>
+          </div>
+          <div class="setting-control">
+            <input type="range" id="arr-slider" min="0" max="100" step="1" />
+            <input type="number" id="arr-input" min="0" max="100" />
+            <span class="setting-unit">ms</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">
+            <span class="setting-abbr">DCD</span>
+            <span class="setting-desc">DAS Cut Delay</span>
+          </div>
+          <div class="setting-control">
+            <input type="range" id="dcd-slider" min="0" max="200" step="1" />
+            <input type="number" id="dcd-input" min="0" max="200" />
+            <span class="setting-unit">ms</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">
+            <span class="setting-abbr">SDF</span>
+            <span class="setting-desc">Soft Drop Factor</span>
+          </div>
+          <div class="setting-control">
+            <input type="range" id="sdf-slider" min="1" max="41" step="1" />
+            <input type="number" id="sdf-input" min="1" max="41" />
+            <span class="setting-unit" id="sdf-unit">×</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KEYBINDS TAB -->
+      <div id="tab-keybinds" class="tab-panel hidden">
+        <div class="keybind-grid" id="keybind-grid">
+          <!-- Populated by settings.js -->
+        </div>
+        <div id="keybind-conflict" class="conflict-msg hidden"></div>
+        <div id="keybind-listening" class="listening-msg hidden">Press any key…</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/game.js"></script>
+</body>
+</html>
