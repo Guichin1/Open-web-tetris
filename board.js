@@ -50,15 +50,20 @@ export function clearLines(board) {
   const clearedRows = [];
   const remaining = [];
 
-  for (let r = 0; r < BOARD_ROWS; r++) {
+  // Process from bottom to top for efficiency
+  for (let r = BOARD_ROWS - 1; r >= 0; r--) {
     if (board[r].every(cell => cell !== null)) {
       clearedRows.push(r);
     } else {
-      remaining.push([...board[r]]);
+      remaining.unshift([...board[r]]);
     }
   }
 
   const linesCleared = clearedRows.length;
+  if (linesCleared === 0) {
+    return { newBoard: board, linesCleared: 0, clearedRows: [] };
+  }
+
   // Add empty rows at top
   const emptyRows = Array.from({ length: linesCleared }, () => Array(BOARD_COLS).fill(null));
   const newBoard = [...emptyRows, ...remaining];
@@ -120,12 +125,17 @@ export function isTopOut(board) {
  */
 export function computeGhost(board, piece) {
   const ghost = piece.clone();
-  while (true) {
+  let dropDistance = 0;
+  const maxDrop = BOARD_ROWS - piece.row; // Prevent infinite loop
+
+  while (dropDistance < maxDrop) {
     ghost.row++;
     if (collides(board, ghost)) {
       ghost.row--;
       break;
     }
+    dropDistance++;
   }
+
   return ghost;
 }

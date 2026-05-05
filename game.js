@@ -186,7 +186,19 @@ class TetrisGame {
 
   _updateGhost() {
     if (!this.currentPiece) { this.ghostPiece = null; return; }
+
+    // Cache ghost calculation - only recalculate if piece position changed
+    if (this._lastGhostPiece &&
+        this._lastGhostPiece.type === this.currentPiece.type &&
+        this._lastGhostPiece.rot === this.currentPiece.rot &&
+        this._lastGhostPiece.col === this.currentPiece.col &&
+        this._lastGhostRow === this.currentPiece.row) {
+      return;
+    }
+
     this.ghostPiece = computeGhost(this.board, this.currentPiece);
+    this._lastGhostPiece = this.currentPiece.clone();
+    this._lastGhostRow = this.currentPiece.row;
   }
 
   // ---- Input handling ----
@@ -413,7 +425,7 @@ class TetrisGame {
       this._tick(dt);
     }
 
-    // Render
+    // Always render for smooth 60fps
     this.renderer.render({
       board: this.board || createBoard(),
       currentPiece: this.state === 'playing' ? this.currentPiece : null,
@@ -436,6 +448,8 @@ class TetrisGame {
       ? (sdf >= 41 ? 0 : gravity / sdf)
       : gravity;
 
+    let needsRender = false;
+
     if (effectiveInterval <= 0) {
       // Instant drop (SDF = ∞ or interval = 0)
       let dropped = 0;
@@ -448,12 +462,15 @@ class TetrisGame {
         dropped++;
       }
       if (softHeld && dropped > 0) this.scoreManager.addSoftDrop(dropped);
-      if (dropped > 0) this._updateGhost();
+      if (dropped > 0) {
+        this._updateGhost();
+        needsRender = true;
+      }
       this._gravityAccum = 0;
 
       // Start lock if on ground
       if (this._lockTimer === null) this._startLockTimer();
-      return;
+      return needsRender;
     }
 
     this._gravityAccum += dt;

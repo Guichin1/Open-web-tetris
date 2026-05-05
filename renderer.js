@@ -26,32 +26,49 @@ function rgba(hex, a) {
 }
 
 // ---- Cell drawing ----
-function drawCell(ctx, x, y, size, color, alpha = 1) {
-  if (size < 4) return;
-  ctx.globalAlpha = alpha;
+// Pre-computed cell cache for fast rendering
+const cellCache = new Map();
 
-  // Base fill (slightly darker)
+function getCachedCell(color, size) {
+  const key = `${color}:${size}`;
+  if (cellCache.has(key)) return cellCache.get(key);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // Base fill
   ctx.fillStyle = darken(color, 0.22);
-  ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
+  ctx.fillRect(1, 1, size - 2, size - 2);
 
-  // Gradient overlay
-  const grad = ctx.createLinearGradient(x, y, x, y + size);
-  grad.addColorStop(0,   rgba(color, 0.95));
+  // Gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, size);
+  grad.addColorStop(0, rgba(color, 0.95));
   grad.addColorStop(0.45, rgba(color, 0.75));
-  grad.addColorStop(1,   rgba(color, 0.5));
+  grad.addColorStop(1, rgba(color, 0.5));
   ctx.fillStyle = grad;
-  ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
+  ctx.fillRect(1, 1, size - 2, size - 2);
 
-  // Top-left shine
+  // Shine
   ctx.fillStyle = rgba('#ffffff', 0.20);
-  ctx.fillRect(x + 2, y + 2, size - 5, 3);
-  ctx.fillRect(x + 2, y + 2, 3, size - 5);
+  ctx.fillRect(2, 2, size - 5, 3);
+  ctx.fillRect(2, 2, 3, size - 5);
 
-  // Inner border (dark inset)
+  // Border
   ctx.strokeStyle = darken(color, 0.5);
   ctx.lineWidth = 1;
-  ctx.strokeRect(x + 1.5, y + 1.5, size - 3, size - 3);
+  ctx.strokeRect(1.5, 1.5, size - 3, size - 3);
 
+  cellCache.set(key, canvas);
+  return canvas;
+}
+
+function drawCell(ctx, x, y, size, color, alpha = 1) {
+  if (size < 4) return;
+  const cache = getCachedCell(color, size);
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(cache, x, y);
   ctx.globalAlpha = 1;
 }
 
@@ -124,7 +141,28 @@ export class Renderer {
     this._lockRaf   = null;
 
     this._setupCanvases();
-    window.addEventListener('resize', () => this._setupCanvases());
+    this._lastWidth = window.innerWidth;
+    this._lastHeight = window.innerHeight;
+    this._resizeTimeout = null;
+
+    window.addEventListener('resize', () => this._handleResize());
+  }
+
+  _handleResize() {
+    // Debounce resize events
+    if (this._resizeTimeout) clearTimeout(this._resizeTimeout);
+    this._resizeTimeout = setTimeout(() => {
+      const currentWidth = window.innerWidth;
+      const currentHeight = window.innerHeight;
+
+      // Only resize if dimensions actually changed significantly
+      if (Math.abs(currentWidth - this._lastWidth) > 10 ||
+          Math.abs(currentHeight - this._lastHeight) > 10) {
+        this._lastWidth = currentWidth;
+        this._lastHeight = currentHeight;
+        this._setupCanvases();
+      }
+    }, 100);
   }
 
   _setupCanvases() {
@@ -179,12 +217,13 @@ export class Renderer {
     const W   = cs * BOARD_COLS;
     const H   = cs * VISIBLE_ROWS;
 
+    // Always clear and redraw for smooth 60fps animation
     ctx.clearRect(0, 0, W, H);
 
-    // Draw cells
+    // Draw board cells - tight loop
     for (let r = 0; r < VISIBLE_ROWS; r++) {
+      const boardRow = r + BUFFER_ROWS;
       for (let c = 0; c < BOARD_COLS; c++) {
-        const boardRow = r + BUFFER_ROWS;
         const cell = board[boardRow]?.[c] ?? null;
         const x = c * cs, y = r * cs;
         if (cell) {
@@ -197,11 +236,12 @@ export class Renderer {
 
     // Line clear flash
     if (this.flashRows.length > 0 && this.flashAlpha > 0) {
+      ctx.fillStyle = `rgba(255,255,255,${this.flashAlpha * 0.85})`;
       for (const row of this.flashRows) {
         const visRow = row - BUFFER_ROWS;
-        if (visRow < 0 || visRow >= VISIBLE_ROWS) continue;
-        ctx.fillStyle = `rgba(255,255,255,${this.flashAlpha * 0.85})`;
-        ctx.fillRect(0, visRow * cs, W, cs);
+        if (visRow >= 0 && visRow < VISIBLE_ROWS) {
+          ctx.fillRect(0, visRow * cs, W, cs);
+        }
       }
     }
 
@@ -216,8 +256,9 @@ export class Renderer {
       const color = PIECE_COLORS[ghostPiece.type];
       for (const [r, c] of ghostPiece.cells()) {
         const vr = r - BUFFER_ROWS;
-        if (vr < 0 || vr >= VISIBLE_ROWS || c < 0 || c >= BOARD_COLS) continue;
-        drawGhostCell(ctx, c * cs, vr * cs, cs, color);
+        if (vr >= 0 && vr < VISIBLE_ROWS && c >= 0 && c < BOARD_COLS) {
+          drawGhostCell(ctx, c * cs, vr * cs, cs, color);
+        }
       }
     }
 
@@ -226,12 +267,13 @@ export class Renderer {
       const color = PIECE_COLORS[currentPiece.type];
       for (const [r, c] of currentPiece.cells()) {
         const vr = r - BUFFER_ROWS;
-        if (vr < 0 || vr >= VISIBLE_ROWS || c < 0 || c >= BOARD_COLS) continue;
-        drawCell(ctx, c * cs, vr * cs, cs, color);
+        if (vr >= 0 && vr < VISIBLE_ROWS && c >= 0 && c < BOARD_COLS) {
+          drawCell(ctx, c * cs, vr * cs, cs, color);
+        }
       }
     }
 
-    // Hold and next
+    // Render panels
     this._renderHold(holding, holdLocked);
     this._renderNext(nextQueue);
   }
