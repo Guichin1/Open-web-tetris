@@ -89,22 +89,10 @@ PIECE_SHAPES.L = [
   [[0,0],[0,1],[1,1],[2,1]],    // L (wait — this is J's L… let me re-check)
 ];
 
-// Actual Guideline L at state L: .X. / .X. / XX.
-// That's top-right area... row 0: [0,1] no wait
-// L-piece in state L (CCW from spawn):
-//  XX
-//   X
-//   X
-// Using 3-wide sub in 4x4:
-// row0: col1,col2? No...
-// Let me use the standard reference:
-// L-state-L: minos at (0,1),(1,1),(2,1),(2,2) — that's R rotated
-// Actually state L = col0+1 col1+1:
-// . X .
-// . X .
-// X X .
-// = [0,1],[1,1],[2,0],[2,1]
-PIECE_SHAPES.L[3] = [[0,1],[1,1],[2,0],[2,1]];
+// Actual Guideline L at state L: XX. / .X. / .X.
+// That's top-left area: row0: col0,col1; row1: col1; row2: col1
+// = [0,0],[0,1],[1,1],[2,1]
+PIECE_SHAPES.L[3] = [[0,0],[0,1],[1,1],[2,1]];
 
 // And J state R should be:
 // . X X
