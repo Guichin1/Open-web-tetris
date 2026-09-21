@@ -1,6 +1,6 @@
 /**
  * board.js
- * Board state, collision detection, line clearing, T-spin detection.
+ * Board state, collision detection, line clearing, and spin detection.
  * Board is 10 wide × 22 tall (20 visible + 2 buffer rows at top).
  */
 
@@ -72,41 +72,49 @@ export function clearLines(board) {
 }
 
 /**
- * T-Spin detection (3-corner rule).
- * Returns: 'tspin' | 'tspin-mini' | null
- * lastKick: { dc, dr, kickIndex } or null
+ * Detect a spin after a piece has been locked.
+ * J/L/T use the four corners of their 3x3 rotation box; I uses the
+ * corners of its 4x4 box. Three occupied corners are enough for a spin.
+ *
+ * Returns: 'tspin' | 'tspin-mini' | 'jspin' | 'lspin' | 'ispin' | null
  */
-export function detectTSpin(board, piece, lastKick) {
-  if (piece.type !== 'T') return null;
+export function detectSpin(board, piece, lastKick) {
+  if (!['T', 'J', 'L', 'I'].includes(piece.type)) return null;
 
-  const [pr, pc] = [piece.row, piece.col];
+  const boxSize = piece.type === 'I' ? 4 : 3;
+  const lastOffset = boxSize - 1;
   const corners = [
-    [pr + 0, pc + 0],
-    [pr + 0, pc + 2],
-    [pr + 2, pc + 0],
-    [pr + 2, pc + 2],
+    [piece.row, piece.col],
+    [piece.row, piece.col + lastOffset],
+    [piece.row + lastOffset, piece.col],
+    [piece.row + lastOffset, piece.col + lastOffset],
   ];
 
+  // Do not count cells belonging to the locked piece as surrounding blocks.
+  const pieceCells = new Set(piece.cells().map(([r, c]) => `${r},${c}`));
   const filled = corners.map(([r, c]) =>
-    r < 0 || r >= BOARD_ROWS || c < 0 || c >= BOARD_COLS || (r >= 0 && board[r]?.[c] !== null)
+    r < 0 || r >= BOARD_ROWS || c < 0 || c >= BOARD_COLS ||
+    (!pieceCells.has(`${r},${c}`) && board[r]?.[c] !== null)
   );
-  const filledCount = filled.filter(Boolean).length;
+  if (filled.filter(Boolean).length < 3) return null;
 
-  if (filledCount < 3) return null;
+  if (piece.type === 'T') {
+    const frontIndices = [[0, 1], [1, 3], [2, 3], [0, 2]][piece.rot];
+    const frontFilled = frontIndices.filter(i => filled[i]).length;
+    const wasKick5 = lastKick && lastKick.kickIndex === 4;
 
-  // Front corners depend on T rotation
-  // rot 0 (up): front = top corners [0,1]
-  // rot 1/R (right): front = right corners [1,3]
-  // rot 2 (down): front = bottom corners [2,3]
-  // rot 3/L (left): front = left corners [0,2]
-  const frontIndices = [[0,1],[1,3],[2,3],[0,2]][piece.rot];
-  const frontFilled = frontIndices.filter(i => filled[i]).length;
+    if (frontFilled === 2 || wasKick5) return 'tspin';
+    if (frontFilled === 1) return 'tspin-mini';
+    return 'tspin';
+  }
 
-  const wasKick5 = lastKick && lastKick.kickIndex === 4;
+  return `${piece.type.toLowerCase()}spin`;
+}
 
-  if (frontFilled === 2 || wasKick5) return 'tspin';
-  if (frontFilled === 1) return 'tspin-mini';
-  return 'tspin';
+/** Backward-compatible T-spin-only entry point. */
+export function detectTSpin(board, piece, lastKick) {
+  const result = detectSpin(board, piece, lastKick);
+  return result === 'tspin' || result === 'tspin-mini' ? result : null;
 }
 
 /**

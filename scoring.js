@@ -1,7 +1,7 @@
 /**
  * scoring.js
  * Guideline-compliant scoring: singles/doubles/triples/tetrises,
- * T-Spin variants, Back-to-Back, combos, soft/hard drop points.
+ * T-Spin and all-spin variants, Back-to-Back, combos, soft/hard drop points.
  */
 
 /**
@@ -17,12 +17,20 @@ const SCORE_TABLE = {
   4: { none: 800,  mini: null, tspin: null },
 };
 
+for (const spinType of ['jspin', 'lspin', 'ispin']) {
+  SCORE_TABLE[0][spinType] = 400;
+  SCORE_TABLE[1][spinType] = 800;
+  SCORE_TABLE[2][spinType] = 1200;
+  SCORE_TABLE[3][spinType] = 1600;
+  SCORE_TABLE[4][spinType] = 2000;
+}
+
 /**
  * Returns whether a clear qualifies for B2B continuation.
- * Only Tetrises and T-Spins (any) maintain B2B.
+ * Only Tetrises and spins maintain B2B.
  */
 function isB2BEligible(lines, tspinType) {
-  if (tspinType === 'tspin' || tspinType === 'mini') return true;
+  if (['tspin', 'mini', 'jspin', 'lspin', 'ispin'].includes(tspinType)) return true;
   if (lines === 4) return true;
   return false;
 }
@@ -31,7 +39,7 @@ function isB2BEligible(lines, tspinType) {
  * Calculate score for a clear event.
  * @param {object} params
  * @param {number}  params.lines       - Lines cleared (0–4)
- * @param {string}  params.tspinType   - 'none' | 'mini' | 'tspin'
+ * @param {string}  params.tspinType   - spin classification
  * @param {boolean} params.b2b         - Is this back-to-back?
  * @param {number}  params.combo       - Current combo count (0-indexed, 0 = no combo)
  * @param {number}  params.level       - Current level
@@ -65,6 +73,15 @@ function buildLabel(lines, tspinType, b2b) {
   if (tspinType === 'mini') {
     const names = ['T-SPIN MINI', 'T-SPIN MINI SINGLE', 'T-SPIN MINI DOUBLE'];
     return prefix + (names[lines] || 'T-SPIN MINI');
+  }
+  if (['jspin', 'lspin', 'ispin'].includes(tspinType)) {
+    const names = {
+      jspin: 'J-SPIN',
+      lspin: 'L-SPIN',
+      ispin: 'I-SPIN',
+    };
+    const lineNames = ['', ' SINGLE', ' DOUBLE', ' TRIPLE', ' QUADRUPLE'];
+    return prefix + names[tspinType] + (lineNames[lines] || '');
   }
   const names = ['', 'SINGLE', 'DOUBLE', 'TRIPLE', 'TETRIS'];
   return prefix + (names[lines] || '');

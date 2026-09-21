@@ -7,7 +7,7 @@
 import { Piece, generate7Bag } from './piece.js';
 import {
   createBoard, collides, lockPiece, clearLines,
-  detectTSpin, isTopOut, computeGhost, BOARD_COLS
+  detectSpin, isTopOut, computeGhost, BOARD_COLS
 } from './board.js';
 import { ScoreManager, gravityInterval } from './scoring.js';
 import { InputManager } from './input.js';
@@ -63,7 +63,7 @@ class TetrisGame {
     this._softDropRow = 0;      // row when soft drop started
     this._hardDropRow = 0;
 
-    // Last rotation kick info (for T-spin detection)
+    // Last rotation kick info (for spin detection)
     this._lastKick = null;
     this._lastRotated = false;
 
@@ -366,12 +366,10 @@ class TetrisGame {
     lockPiece(this.board, this.currentPiece);
     this.renderer.triggerLockFlash();
 
-    // Detect T-Spin
-    let tspinType = 'none';
-    if (this._lastRotated && this.currentPiece.type === 'T') {
-      const detected = detectTSpin(this.board, this.currentPiece, this._lastKick);
-      tspinType = detected || 'none';
-    }
+    // Detect spins before clearing lines, while the locked piece is present.
+    const spinType = this._lastRotated
+      ? (detectSpin(this.board, this.currentPiece, this._lastKick) || 'none')
+      : 'none';
 
     // Clear lines
     const { newBoard, linesCleared, clearedRows } = clearLines(this.board);
@@ -382,7 +380,7 @@ class TetrisGame {
     }
 
     // Score
-    const { points, label, combo } = this.scoreManager.processLineClear(linesCleared, tspinType);
+    const { points, label, combo } = this.scoreManager.processLineClear(linesCleared, spinType);
 
     // Show action label
     if (label && linesCleared > 0) {
