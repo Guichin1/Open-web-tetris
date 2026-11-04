@@ -49,9 +49,13 @@ class TetrisGame {
     );
 
     // Initialize settings UI
-    this.settingsUI = new SettingsUI(this.settings, (newSettings) => {
+    this.settingsUI = new SettingsUI(this.settings, (newSettings, previousOnlineScores) => {
       this.settings = newSettings;
       this.input.updateSettings(newSettings.keybinds, newSettings.handling);
+      if (previousOnlineScores !== undefined &&
+          previousOnlineScores !== newSettings.saveOnlineScores) {
+        this._handleOnlineScoresConsent(newSettings.saveOnlineScores);
+      }
     });
     this.nickname = loadNickname();
     this.playerId = null;
@@ -90,10 +94,12 @@ class TetrisGame {
     document.getElementById('highscore').textContent = loadHighScore().toLocaleString();
     this._updatePlayerName();
     loadChangelog();
-    if (isOnlineLeaderboardConfigured()) {
+    if (!isOnlineLeaderboardConfigured()) {
+      this._setOnlineStatus('Online leaderboard is not configured.');
+    } else if (this.settings.saveOnlineScores) {
       this._initializeOnlinePlayer();
     } else {
-      this._setOnlineStatus('Online leaderboard is not configured.');
+      this._setOnlineStatus('Online score saving is off.');
     }
     if (!this.nickname) this._showProfileSetup();
 
@@ -121,6 +127,7 @@ class TetrisGame {
     document.getElementById('profile-form').addEventListener('submit', (event) => {
       event.preventDefault();
       const input = document.getElementById('nickname-input');
+      const onlineScores = document.getElementById('save-online-scores-setup');
       const error = document.getElementById('profile-error');
       const nickname = input.value.trim();
 
@@ -133,6 +140,7 @@ class TetrisGame {
 
       try {
         this.nickname = saveNickname(nickname);
+        this.settingsUI.setOnlineScoresEnabled(onlineScores.checked);
         document.getElementById('modal-profile').classList.add('hidden');
         error.classList.add('hidden');
         this._updatePlayerName();
@@ -158,11 +166,15 @@ class TetrisGame {
   }
 
   async _initializeOnlinePlayer() {
+    if (!this.settings.saveOnlineScores) return;
     try {
-      this.playerId = await initializeOnlinePlayer();
+      const playerId = await initializeOnlinePlayer();
+      if (!this.settings.saveOnlineScores) return;
+      this.playerId = playerId;
       document.getElementById('player-id').textContent = `PLAYER ID: ${this.playerId}`;
       this._setOnlineStatus('Online leaderboard ready.');
     } catch (error) {
+      if (!this.settings.saveOnlineScores) return;
       console.error('Could not initialize the online player.', error);
       const errorMessage = error && typeof error.message === 'string' ? error.message : '';
       const anonymousSignInDisabled = /anonymous sign-ins are disabled/i.test(errorMessage);
@@ -173,6 +185,22 @@ class TetrisGame {
         true
       );
     }
+  }
+
+  _handleOnlineScoresConsent(enabled) {
+    if (enabled) {
+      if (isOnlineLeaderboardConfigured()) {
+        this._setOnlineStatus('Connecting to online leaderboard…');
+        this._initializeOnlinePlayer();
+      } else {
+        this._setOnlineStatus('Online leaderboard is not configured.', true);
+      }
+      return;
+    }
+
+    this.playerId = null;
+    document.getElementById('player-id').textContent = '';
+    this._setOnlineStatus('Online score saving is off. Existing scores remain.');
   }
 
   _setOnlineStatus(message, isError = false) {
@@ -259,10 +287,15 @@ class TetrisGame {
   }
 
   async _submitOnlineScore(score) {
-    if (!isOnlineLeaderboardConfigured()) return;
+    if (!this.settings.saveOnlineScores || !isOnlineLeaderboardConfigured()) return;
 
     try {
-      await submitOnlineScore(this.nickname, score);
+      const saved = await submitOnlineScore(
+        this.nickname,
+        score,
+        () => this.settings.saveOnlineScores
+      );
+      if (!saved) return;
       this._setOnlineStatus('Online record saved.');
     } catch (error) {
       console.error('Could not save the online score.', error);

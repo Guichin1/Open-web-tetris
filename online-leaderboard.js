@@ -60,13 +60,15 @@ export async function loadOnlineLeaderboard() {
   return data;
 }
 
-export async function submitOnlineScore(nickname, score) {
+export async function submitOnlineScore(nickname, score, shouldSubmit = () => true) {
   const client = await getClient();
   await getPlayerId(client);
+  if (!shouldSubmit()) return false;
 
   const { error } = await client.rpc('submit_player_score', {
     p_nickname: nickname,
     p_score: score,
   });
   if (error) throw error;
+  return true;
 }

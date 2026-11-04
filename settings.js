@@ -55,14 +55,25 @@ export const DEFAULT_HANDLING = {
 export function loadSettings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { keybinds: { ...DEFAULT_KEYBINDS }, handling: { ...DEFAULT_HANDLING } };
+    if (!raw) {
+      return {
+        keybinds: { ...DEFAULT_KEYBINDS },
+        handling: { ...DEFAULT_HANDLING },
+        saveOnlineScores: false,
+      };
+    }
     const saved = JSON.parse(raw);
     return {
       keybinds: { ...DEFAULT_KEYBINDS, ...(saved.keybinds || {}) },
       handling: { ...DEFAULT_HANDLING, ...(saved.handling || {}) },
+      saveOnlineScores: saved.saveOnlineScores === true,
     };
   } catch {
-    return { keybinds: { ...DEFAULT_KEYBINDS }, handling: { ...DEFAULT_HANDLING } };
+    return {
+      keybinds: { ...DEFAULT_KEYBINDS },
+      handling: { ...DEFAULT_HANDLING },
+      saveOnlineScores: false,
+    };
   }
 }
 
@@ -154,6 +165,7 @@ export class SettingsUI {
     this._boundKeyListener = null;
 
     this._initHandling();
+    this._initOnlineScores();
     this._initKeybinds();
     this._initTabs();
     this._initModal();
@@ -215,6 +227,45 @@ export class SettingsUI {
         else update(input.value);
       });
     }
+  }
+
+  _initOnlineScores() {
+    const checkbox = document.getElementById('online-scores-setting');
+    this.syncOnlineScores();
+    checkbox.addEventListener('change', () => {
+      try {
+        this.setOnlineScoresEnabled(checkbox.checked);
+        document.getElementById('online-scores-setting-error').textContent = '';
+      } catch (error) {
+        console.error('Could not save the online score preference.', error);
+        document.getElementById('online-scores-setting-error').textContent =
+          'Could not save this preference. Check your browser storage settings.';
+        checkbox.checked = this.settings.saveOnlineScores;
+      }
+    });
+  }
+
+  setOnlineScoresEnabled(enabled) {
+    const previousValue = this.settings.saveOnlineScores;
+    if (previousValue === enabled) return;
+
+    this.settings.saveOnlineScores = enabled;
+    try {
+      saveSettings(this.settings);
+    } catch (error) {
+      this.settings.saveOnlineScores = previousValue;
+      this.syncOnlineScores();
+      throw error;
+    }
+
+    this.syncOnlineScores();
+    this.onChanged(this.settings, previousValue);
+  }
+
+  syncOnlineScores() {
+    const enabled = this.settings.saveOnlineScores;
+    document.getElementById('online-scores-setting').checked = enabled;
+    document.getElementById('save-online-scores-setup').checked = enabled;
   }
 
   _syncHandlingInputs({ das, arr, dcd, sdf }) {
@@ -338,6 +389,7 @@ export class SettingsUI {
   show() {
     document.getElementById('modal-settings').classList.remove('hidden');
     this._syncHandlingInputs(this.settings.handling);
+    this.syncOnlineScores();
     this._initKeybinds();
     document.getElementById('keybind-conflict').classList.add('hidden');
   }

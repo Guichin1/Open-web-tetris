@@ -1,7 +1,12 @@
-# Próxima versão — ainda sem commit
+# Versão 1.0.6 — 03/11/2026 — commit
+- Você escolhe se quer enviar suas pontuações para o placar online, tanto na primeira configuração quanto nas configurações do jogo.
+- A tela inicial aproveita melhor o espaço e reúne os controles, as opções do jogo e o histórico de mudanças.
+- Os controles e os painéis do jogo se ajustam a diferentes tamanhos de tela para evitar cortes.
+
+# Versão 1.0.5 — 03/11/2026 — commit 26d3756
 - Na primeira visita, o jogo pede um apelido para salvar suas pontuações.
-- O placar local mostra as dez melhores pontuações salvas neste navegador.
-- O placar online mostra o melhor resultado de cada jogador.
+- Adicionado placar local — mostra as dez melhores pontuações salvas neste navegador.
+- Adicionado placar online, via supabase — mostra o melhor resultado de cada jogador.
 - O jogo cria um ID anônimo para reconhecer o jogador neste navegador.
 - A tela inicial mostra o histórico de mudanças deste arquivo.
 

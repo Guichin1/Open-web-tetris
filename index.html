@@ -39,6 +39,20 @@
         <div class="panel-label">COMBO</div>
         <div class="panel-value combo-value" id="combo">×0</div>
       </div>
+      <div class="panel-block controls-hint">
+        <div class="panel-label">CONTROLS</div>
+        <div class="hint-row"><span class="hint-key">A</span><span>Move Left</span></div>
+        <div class="hint-row"><span class="hint-key">D</span><span>Move Right</span></div>
+        <div class="hint-row"><span class="hint-key">S</span><span>Soft Drop</span></div>
+        <div class="hint-row"><span class="hint-key">SPACE</span><span>Hard Drop</span></div>
+        <div class="hint-row"><span class="hint-key">K</span><span>Rotate CW</span></div>
+        <div class="hint-row"><span class="hint-key">J</span><span>Rotate CCW</span></div>
+        <div class="hint-row"><span class="hint-key">L</span><span>Rotate 180</span></div>
+        <div class="hint-row"><span class="hint-key">I</span><span>Hold</span></div>
+        <div class="hint-row"><span class="hint-key">ESC</span><span>Pause</span></div>
+        <div class="hint-row"><span class="hint-key">F1</span><span>Restart</span></div>
+        <div class="hint-row"><span class="hint-key">TAB</span><span>Settings</span></div>
+      </div>
     </aside>
 
     <!-- CENTER: BOARD -->
@@ -47,20 +61,42 @@
       <div id="action-label"></div>
 
       <div id="overlay-start" class="overlay">
-        <div class="overlay-box">
-          <div class="overlay-logo">TETRIS</div>
-          <div class="overlay-subtitle">GUIDELINE EDITION</div>
-          <div class="player-name" id="player-name"></div>
-          <div class="player-id" id="player-id"></div>
-          <div class="online-status" id="online-status" aria-live="polite"></div>
+        <div class="overlay-box start-menu">
+          <section class="start-side start-controls">
+            <div class="panel-label">CONTROLS</div>
+            <div class="hint-row"><span class="hint-key">A</span><span>Move Left</span></div>
+            <div class="hint-row"><span class="hint-key">D</span><span>Move Right</span></div>
+            <div class="hint-row"><span class="hint-key">S</span><span>Soft Drop</span></div>
+            <div class="hint-row"><span class="hint-key">SPACE</span><span>Hard Drop</span></div>
+            <div class="hint-row"><span class="hint-key">K</span><span>Rotate CW</span></div>
+            <div class="hint-row"><span class="hint-key">J</span><span>Rotate CCW</span></div>
+            <div class="hint-row"><span class="hint-key">L</span><span>Rotate 180</span></div>
+            <div class="hint-row"><span class="hint-key">I</span><span>Hold</span></div>
+            <div class="hint-row"><span class="hint-key">ESC</span><span>Pause</span></div>
+            <div class="hint-row"><span class="hint-key">F1</span><span>Restart</span></div>
+            <div class="hint-row"><span class="hint-key">TAB</span><span>Settings</span></div>
+          </section>
+
+          <div class="start-main">
+            <div class="overlay-logo">TETRIS</div>
+            <div class="overlay-subtitle">GUIDELINE EDITION</div>
+            <div class="player-name" id="player-name"></div>
+            <button class="btn-primary" id="btn-start">▶ PLAY</button>
+            <button class="btn-secondary" id="btn-leaderboard">LOCAL SCORES</button>
+            <button class="btn-secondary" id="btn-online-leaderboard">ONLINE SCORES</button>
+            <button class="btn-secondary" id="btn-settings-start">⚙ SETTINGS</button>
+          </div>
+
+          <section class="start-side start-updates">
+            <div class="start-player-status">
+              <div class="player-id" id="player-id"></div>
+              <div class="online-status" id="online-status" aria-live="polite"></div>
+            </div>
           <div class="changelog">
             <div class="changelog-title">CHANGELOG</div>
             <div class="changelog-content" id="changelog-content" aria-live="polite">Loading…</div>
           </div>
-          <button class="btn-primary" id="btn-start">▶ PLAY</button>
-          <button class="btn-secondary" id="btn-leaderboard">LOCAL SCORES</button>
-          <button class="btn-secondary" id="btn-online-leaderboard">ONLINE SCORES</button>
-          <button class="btn-secondary" id="btn-settings-start">⚙ SETTINGS</button>
+          </section>
         </div>
       </div>
 
@@ -90,20 +126,6 @@
         <div class="panel-label">NEXT</div>
         <canvas id="canvas-next" width="120" height="600"></canvas>
       </div>
-      <div class="panel-block controls-hint">
-        <div class="panel-label">CONTROLS</div>
-        <div class="hint-row"><span class="hint-key">A</span><span>Move Left</span></div>
-        <div class="hint-row"><span class="hint-key">D</span><span>Move Right</span></div>
-        <div class="hint-row"><span class="hint-key">S</span><span>Soft Drop</span></div>
-        <div class="hint-row"><span class="hint-key">SPACE</span><span>Hard Drop</span></div>
-        <div class="hint-row"><span class="hint-key">K</span><span>Rotate CW</span></div>
-        <div class="hint-row"><span class="hint-key">J</span><span>Rotate CCW</span></div>
-        <div class="hint-row"><span class="hint-key">L</span><span>Rotate 180</span></div>
-        <div class="hint-row"><span class="hint-key">I</span><span>Hold</span></div>
-        <div class="hint-row"><span class="hint-key">ESC</span><span>Pause</span></div>
-        <div class="hint-row"><span class="hint-key">F1</span><span>Restart</span></div>
-        <div class="hint-row"><span class="hint-key">TAB</span><span>Settings</span></div>
-      </div>
     </aside>
   </div>
 
@@ -113,6 +135,11 @@
       <div class="overlay-logo" id="profile-title">WELCOME</div>
       <p class="modal-description">Choose a nickname to save your scores.</p>
       <p class="modal-description">Your nickname and best score will be visible on the public online leaderboard.</p>
+      <label class="online-consent">
+        <input id="save-online-scores-setup" type="checkbox" />
+        <span>Save my scores online</span>
+      </label>
+      <p class="modal-description">You can change this later in Settings. Scores already sent will remain on the leaderboard.</p>
       <label class="profile-label" for="nickname-input">NICKNAME</label>
       <input id="nickname-input" name="nickname" type="text" minlength="2" maxlength="16" autocomplete="nickname" required />
       <p class="modal-error hidden" id="profile-error" role="alert"></p>
@@ -200,6 +227,18 @@
             <input type="number" id="sdf-input" min="1" max="41" />
             <span class="setting-unit" id="sdf-unit">×</span>
           </div>
+        </div>
+        <div class="setting-row online-score-setting">
+          <div class="setting-label">
+            <span class="setting-abbr">ONLINE SCORES</span>
+            <span class="setting-desc">Save your best score to the public leaderboard</span>
+          </div>
+          <label class="online-consent">
+            <input id="online-scores-setting" type="checkbox" />
+            <span>Save my scores online</span>
+          </label>
+          <p class="modal-description">Scores already sent remain visible if you turn this off.</p>
+          <p class="modal-error" id="online-scores-setting-error" role="alert"></p>
         </div>
       </div>
 

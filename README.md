@@ -71,12 +71,15 @@ changes, update `supabase-config.js` with the new publishable key.
 2. Open the SQL Editor, run `supabase-setup.sql`, and make sure it completes.
 3. Serve the game over HTTP or HTTPS and open **ONLINE SCORES**.
 
-The first visit creates a persistent anonymous player ID in that browser. Each
-player has one online entry, and only a new personal best replaces the score.
-Clearing browser storage creates a new ID. Scores come from the game client and
-are not cheat-proof; enable Supabase rate limits or CAPTCHA to reduce abuse.
-Nicknames and best scores are public, and the leaderboard displays the top 10
-players. Players should choose a nickname that does not reveal personal details.
+Online score saving is optional and is off by default. The profile setup and
+Settings both have a **Save my scores online** checkbox. Opting in creates a
+persistent anonymous player ID in that browser and sends the player's best
+score and nickname to the public leaderboard. Turning it off stops future
+saves; scores already sent remain visible. The leaderboard can still be read
+without opting in. Clearing browser storage creates a new ID. Scores come from
+the game client and are not cheat-proof; enable Supabase rate limits or CAPTCHA
+to reduce abuse. Players should choose a nickname that does not reveal personal
+details.
 
 ## Como atualizar o histórico de mudanças
 
