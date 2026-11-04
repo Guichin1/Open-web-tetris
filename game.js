@@ -9,7 +9,7 @@ import {
   createBoard, collides, lockPiece, clearLines,
   detectSpin, isTopOut, computeGhost, BOARD_COLS
 } from './board.js';
-import { ScoreManager, gravityInterval } from './scoring.js';
+import { ScoreManager, gravityInterval, lockDelayForLevel } from './scoring.js';
 import { InputManager } from './input.js';
 import { Renderer } from './renderer.js';
 import {
@@ -24,7 +24,6 @@ import {
 } from './online-leaderboard.js';
 
 // ---- Constants ----
-const LOCK_DELAY    = 500;    // ms
 const LOCK_RESETS   = 15;
 const NEXT_QUEUE_SIZE = 5;
 
@@ -607,7 +606,7 @@ class TetrisGame {
     this._lockTimer = setTimeout(() => {
       this._lockTimer = null;
       this._lockPiece();
-    }, LOCK_DELAY);
+    }, lockDelayForLevel(this.scoreManager.level));
   }
 
   _clearLockTimer() {

@@ -1,4 +1,6 @@
 # Próxima versão — ainda sem commit
+- A gravidade aumenta de forma gradual e constante a cada nível, sem acelerar de forma explosiva.
+- Nos níveis altos, as peças também travam mais rápido ao tocar o chão, para que o ritmo continue aumentando.
 - O modo Tower já pode ser escolhido e mostra a altitude e o andar alcançados durante a partida.
 - A grade do Tower fica mais visível e acompanha a subida de forma mais perceptível.
 - Clears e giros dão impulso de altitude e ajudam a subir o rank de escalada; o rank aumenta a velocidade de subida.

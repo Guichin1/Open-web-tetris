@@ -92,9 +92,15 @@ function buildLabel(lines, tspinType, b2b) {
  * Returns gravity interval in ms per cell.
  */
 export function gravityInterval(level) {
-  // Guideline gravity formula (seconds per cell → ms)
-  const sec = Math.pow(0.8 - (level - 1) * 0.007, level - 1);
-  return Math.max(sec * 1000, 16.67); // cap at ~60fps
+  const safeLevel = Number.isFinite(level) ? Math.max(1, Math.floor(level)) : 1;
+  const cellsPerSecond = 1 + (safeLevel - 1) * 0.25;
+  return 1000 / cellsPerSecond;
+}
+
+export function lockDelayForLevel(level) {
+  const safeLevel = Number.isFinite(level) ? Math.max(1, Math.floor(level)) : 1;
+  const levelsAboveThreshold = Math.max(0, safeLevel - 20);
+  return Math.max(100, 500 - levelsAboveThreshold * 20);
 }
 
 /**
