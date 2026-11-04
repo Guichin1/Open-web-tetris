@@ -58,6 +58,13 @@ export class InputManager {
   }
 
   _onKeyDown(e) {
+    const target = e.target;
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target.isContentEditable
+    ) return;
+
     // Prevent repeat events from browser
     if (e.repeat) return;
 

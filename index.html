@@ -50,19 +50,16 @@
         <div class="overlay-box">
           <div class="overlay-logo">TETRIS</div>
           <div class="overlay-subtitle">GUIDELINE EDITION</div>
+          <div class="player-name" id="player-name"></div>
+          <div class="player-id" id="player-id"></div>
+          <div class="online-status" id="online-status" aria-live="polite"></div>
           <div class="changelog">
             <div class="changelog-title">CHANGELOG</div>
-            <div class="changelog-content">
-              • Cached cell rendering (60 FPS)<br>
-              • Fixed L-piece rotation bug<br>
-              • New keybinds: A/D/S/K/J/L/I<br>
-              • Performance optimizations<br>
-              • Responsive layout fixes<br>
-              • Live Server integration<br>
-              • Added .vscode config
-            </div>
+            <div class="changelog-content" id="changelog-content" aria-live="polite">Loading…</div>
           </div>
           <button class="btn-primary" id="btn-start">▶ PLAY</button>
+          <button class="btn-secondary" id="btn-leaderboard">LOCAL SCORES</button>
+          <button class="btn-secondary" id="btn-online-leaderboard">ONLINE SCORES</button>
           <button class="btn-secondary" id="btn-settings-start">⚙ SETTINGS</button>
         </div>
       </div>
@@ -108,6 +105,41 @@
         <div class="hint-row"><span class="hint-key">TAB</span><span>Settings</span></div>
       </div>
     </aside>
+  </div>
+
+  <div id="modal-profile" class="app-modal hidden" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+    <div class="app-modal-backdrop"></div>
+    <form class="app-modal-content profile-form" id="profile-form">
+      <div class="overlay-logo" id="profile-title">WELCOME</div>
+      <p class="modal-description">Choose a nickname to save your scores.</p>
+      <p class="modal-description">Your nickname and best score will be visible on the public online leaderboard.</p>
+      <label class="profile-label" for="nickname-input">NICKNAME</label>
+      <input id="nickname-input" name="nickname" type="text" minlength="2" maxlength="16" autocomplete="nickname" required />
+      <p class="modal-error hidden" id="profile-error" role="alert"></p>
+      <button class="btn-primary" type="submit">SAVE PROFILE</button>
+    </form>
+  </div>
+
+  <div id="modal-leaderboard" class="app-modal hidden" role="dialog" aria-modal="true" aria-labelledby="leaderboard-title">
+    <div class="app-modal-backdrop" id="leaderboard-backdrop"></div>
+    <section class="app-modal-content leaderboard-content">
+      <div class="modal-heading">
+        <h2 class="overlay-logo" id="leaderboard-title">LEADERBOARD</h2>
+        <button class="modal-close" id="btn-close-leaderboard" type="button" aria-label="Close leaderboard">✕</button>
+      </div>
+      <div id="leaderboard-entries" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <div id="modal-online-leaderboard" class="app-modal hidden" role="dialog" aria-modal="true" aria-labelledby="online-leaderboard-title">
+    <div class="app-modal-backdrop" id="online-leaderboard-backdrop"></div>
+    <section class="app-modal-content leaderboard-content">
+      <div class="modal-heading">
+        <h2 class="overlay-logo" id="online-leaderboard-title">ONLINE SCORES</h2>
+        <button class="modal-close" id="btn-close-online-leaderboard" type="button" aria-label="Close online leaderboard">✕</button>
+      </div>
+      <div id="online-leaderboard-entries" aria-live="polite"></div>
+    </section>
   </div>
 
   <!-- SETTINGS MODAL -->

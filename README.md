@@ -18,6 +18,10 @@ A complete, technically precise Tetris implementation in pure HTML/CSS/JS — no
 - ✅ **DAS/ARR/DCD/SDF** — all configurable in the settings menu
 - ✅ **Fully rebindable keybinds** — persisted in localStorage
 - ✅ **High score** — persisted in localStorage
+- ✅ **Player nickname** — requested on first launch and persisted in localStorage
+- ✅ **Local leaderboard** — top 10 scores saved in the current browser
+- ✅ **Online leaderboard** — top 10 personal bests, with a persistent anonymous player ID
+- ✅ **Start screen changelog** — loaded automatically from `CHANGELOG.MD`
 
 ## Default Keybinds
 
@@ -46,16 +50,48 @@ A complete, technically precise Tetris implementation in pure HTML/CSS/JS — no
 
 ## Running Locally
 
-No build step required. Just open `index.html` in your browser:
+No build step required. Run a local web server so the game can load `CHANGELOG.MD`:
 
 ```bash
-# Option 1: Direct open
-open index.html
-
-# Option 2: Local server (avoids ES module CORS in some browsers)
+# Local server
 python3 -m http.server 8080
 # then visit http://localhost:8080
 ```
+
+The leaderboard is local to the browser and is not shared across devices.
+
+## Online leaderboard setup
+
+The browser uses only the Supabase project URL and its public publishable key
+from the ignored `.env` file. The personal access token and project secret key
+must never be added to browser code or shared with players. If the public key
+changes, update `supabase-config.js` with the new publishable key.
+
+1. In Supabase, enable **Authentication → Sign In / Providers → Anonymous Sign-Ins**.
+2. Open the SQL Editor, run `supabase-setup.sql`, and make sure it completes.
+3. Serve the game over HTTP or HTTPS and open **ONLINE SCORES**.
+
+The first visit creates a persistent anonymous player ID in that browser. Each
+player has one online entry, and only a new personal best replaces the score.
+Clearing browser storage creates a new ID. Scores come from the game client and
+are not cheat-proof; enable Supabase rate limits or CAPTCHA to reduce abuse.
+Nicknames and best scores are public, and the leaderboard displays the top 10
+players. Players should choose a nickname that does not reveal personal details.
+
+## Como atualizar o histórico de mudanças
+
+O [CHANGELOG.MD](./CHANGELOG.MD) é exibido na tela inicial. Escreva em português,
+com frases curtas que expliquem o que mudou para quem joga. Evite siglas e termos
+técnicos; quando forem necessários, explique-os.
+
+Cada versão publicada deve apontar para o commit do GitHub que trouxe a mudança
+ao jogo. Inclua a data e os primeiros caracteres do código do commit. Coloque a
+versão mais nova no início e descreva primeiro o efeito para quem joga. Não
+conte commits que só mudam documentação ou organização do projeto como versões.
+
+Mudanças ainda sem commit ficam em **“Próxima versão — ainda sem commit”**.
+Quando forem publicadas, mova-as para uma nova versão com a data e o código do
+commit correspondente.
 
 ## GitHub Pages Deployment
 

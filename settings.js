@@ -5,6 +5,9 @@
  */
 
 const STORAGE_KEY = 'tetris_settings_v1';
+const NICKNAME_KEY = 'tetris_nickname';
+const LEADERBOARD_KEY = 'tetris_leaderboard';
+const LEADERBOARD_LIMIT = 10;
 
 export const DEFAULT_KEYBINDS = {
   moveLeft:    'KeyA',
@@ -80,6 +83,62 @@ export function saveHighScore(score) {
     return true;
   }
   return false;
+}
+
+export function loadNickname() {
+  return (localStorage.getItem(NICKNAME_KEY) || '').trim();
+}
+
+export function saveNickname(nickname) {
+  const normalized = nickname.trim();
+  if (normalized.length < 2 || normalized.length > 16) {
+    throw new RangeError('Nickname must contain between 2 and 16 characters.');
+  }
+  localStorage.setItem(NICKNAME_KEY, normalized);
+  return normalized;
+}
+
+export function loadLeaderboard() {
+  const raw = localStorage.getItem(LEADERBOARD_KEY);
+  if (!raw) return [];
+
+  let entries;
+  try {
+    entries = JSON.parse(raw);
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
+    console.error('Could not read the saved leaderboard.', error);
+    return [];
+  }
+
+  if (!Array.isArray(entries)) return [];
+  return entries
+    .filter(entry =>
+      entry &&
+      typeof entry.nickname === 'string' &&
+      Number.isFinite(entry.score) &&
+      Number.isFinite(entry.timestamp)
+    )
+    .map(entry => ({
+      nickname: entry.nickname.slice(0, 16),
+      score: Math.max(0, Math.floor(entry.score)),
+      timestamp: entry.timestamp,
+    }))
+    .sort((a, b) => b.score - a.score || b.timestamp - a.timestamp)
+    .slice(0, LEADERBOARD_LIMIT);
+}
+
+export function recordScore(nickname, score) {
+  const entries = loadLeaderboard();
+  entries.push({
+    nickname: nickname.slice(0, 16),
+    score: Math.max(0, Math.floor(score)),
+    timestamp: Date.now(),
+  });
+  entries.sort((a, b) => b.score - a.score || b.timestamp - a.timestamp);
+  const leaderboard = entries.slice(0, LEADERBOARD_LIMIT);
+  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard));
+  return leaderboard;
 }
 
 /**

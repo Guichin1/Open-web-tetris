@@ -12,7 +12,15 @@ import {
 import { ScoreManager, gravityInterval } from './scoring.js';
 import { InputManager } from './input.js';
 import { Renderer } from './renderer.js';
-import { loadSettings, saveSettings, saveHighScore, loadHighScore, SettingsUI } from './settings.js';
+import {
+  loadSettings, saveHighScore, loadHighScore, loadNickname, saveNickname,
+  loadLeaderboard, recordScore, SettingsUI
+} from './settings.js';
+import { loadChangelog } from './changelog.js';
+import {
+  initializeOnlinePlayer, isOnlineLeaderboardConfigured,
+  loadOnlineLeaderboard, submitOnlineScore
+} from './online-leaderboard.js';
 
 // ---- Constants ----
 const LOCK_DELAY    = 500;    // ms
@@ -45,6 +53,8 @@ class TetrisGame {
       this.settings = newSettings;
       this.input.updateSettings(newSettings.keybinds, newSettings.handling);
     });
+    this.nickname = loadNickname();
+    this.playerId = null;
 
     // Game fields (initialized on start)
     this.board = null;
@@ -78,6 +88,14 @@ class TetrisGame {
 
     // Display highscore
     document.getElementById('highscore').textContent = loadHighScore().toLocaleString();
+    this._updatePlayerName();
+    loadChangelog();
+    if (isOnlineLeaderboardConfigured()) {
+      this._initializeOnlinePlayer();
+    } else {
+      this._setOnlineStatus('Online leaderboard is not configured.');
+    }
+    if (!this.nickname) this._showProfileSetup();
 
     // Start render loop
     this._loop(0);
@@ -94,10 +112,170 @@ class TetrisGame {
     document.getElementById('btn-settings-pause').addEventListener('click', () => {
       this.settingsUI.show();
     });
+    document.getElementById('btn-leaderboard').addEventListener('click', () => this._showLeaderboard());
+    document.getElementById('btn-close-leaderboard').addEventListener('click', () => this._hideLeaderboard());
+    document.getElementById('leaderboard-backdrop').addEventListener('click', () => this._hideLeaderboard());
+    document.getElementById('btn-online-leaderboard').addEventListener('click', () => this._showOnlineLeaderboard());
+    document.getElementById('btn-close-online-leaderboard').addEventListener('click', () => this._hideOnlineLeaderboard());
+    document.getElementById('online-leaderboard-backdrop').addEventListener('click', () => this._hideOnlineLeaderboard());
+    document.getElementById('profile-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = document.getElementById('nickname-input');
+      const error = document.getElementById('profile-error');
+      const nickname = input.value.trim();
+
+      if (nickname.length < 2 || nickname.length > 16) {
+        error.textContent = 'Nickname must contain between 2 and 16 characters.';
+        error.classList.remove('hidden');
+        input.focus();
+        return;
+      }
+
+      try {
+        this.nickname = saveNickname(nickname);
+        document.getElementById('modal-profile').classList.add('hidden');
+        error.classList.add('hidden');
+        this._updatePlayerName();
+      } catch (saveError) {
+        console.error('Could not save the player profile.', saveError);
+        error.textContent = 'Could not save your nickname. Check your browser storage settings.';
+        error.classList.remove('hidden');
+      }
+    });
+  }
+
+  _showProfileSetup() {
+    const modal = document.getElementById('modal-profile');
+    const input = document.getElementById('nickname-input');
+    modal.classList.remove('hidden');
+    input.focus();
+  }
+
+  _updatePlayerName() {
+    document.getElementById('player-name').textContent = this.nickname
+      ? `PLAYER: ${this.nickname}`
+      : '';
+  }
+
+  async _initializeOnlinePlayer() {
+    try {
+      this.playerId = await initializeOnlinePlayer();
+      document.getElementById('player-id').textContent = `PLAYER ID: ${this.playerId}`;
+      this._setOnlineStatus('Online leaderboard ready.');
+    } catch (error) {
+      console.error('Could not initialize the online player.', error);
+      const errorMessage = error && typeof error.message === 'string' ? error.message : '';
+      const anonymousSignInDisabled = /anonymous sign-ins are disabled/i.test(errorMessage);
+      this._setOnlineStatus(
+        anonymousSignInDisabled
+          ? 'Enable Anonymous Sign-Ins in Supabase Authentication settings.'
+          : 'Online player ID could not be loaded. Check the Supabase setup.',
+        true
+      );
+    }
+  }
+
+  _setOnlineStatus(message, isError = false) {
+    const status = document.getElementById('online-status');
+    status.textContent = message;
+    status.classList.toggle('error', isError);
+  }
+
+  _showLeaderboard() {
+    const container = document.getElementById('leaderboard-entries');
+    const entries = loadLeaderboard();
+    container.replaceChildren();
+
+    if (entries.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'leaderboard-empty';
+      empty.textContent = 'No scores yet. Play a game to get on the board!';
+      container.appendChild(empty);
+    } else {
+      const list = document.createElement('ol');
+      list.className = 'leaderboard-list';
+      entries.forEach((entry) => {
+        const row = document.createElement('li');
+        const name = document.createElement('span');
+        const score = document.createElement('strong');
+        name.textContent = entry.nickname;
+        score.textContent = entry.score.toLocaleString();
+        row.append(name, score);
+        list.appendChild(row);
+      });
+      container.appendChild(list);
+    }
+
+    document.getElementById('modal-leaderboard').classList.remove('hidden');
+  }
+
+  _hideLeaderboard() {
+    document.getElementById('modal-leaderboard').classList.add('hidden');
+  }
+
+  async _showOnlineLeaderboard() {
+    const modal = document.getElementById('modal-online-leaderboard');
+    const container = document.getElementById('online-leaderboard-entries');
+    modal.classList.remove('hidden');
+    container.textContent = 'Loading online scores…';
+
+    if (!isOnlineLeaderboardConfigured()) {
+      container.textContent = 'Online scores are not set up yet.';
+      return;
+    }
+
+    try {
+      const entries = await loadOnlineLeaderboard();
+      if (modal.classList.contains('hidden')) return;
+      container.replaceChildren();
+
+      if (entries.length === 0) {
+        container.textContent = 'No online scores yet. Be the first to set a record!';
+        return;
+      }
+
+      const list = document.createElement('ol');
+      list.className = 'leaderboard-list';
+      entries.forEach((entry) => {
+        const row = document.createElement('li');
+        const name = document.createElement('span');
+        const score = document.createElement('strong');
+        name.textContent = entry.nickname;
+        score.textContent = Number(entry.best_score).toLocaleString();
+        row.append(name, score);
+        list.appendChild(row);
+      });
+      container.appendChild(list);
+    } catch (error) {
+      console.error('Could not load the online leaderboard.', error);
+      if (!modal.classList.contains('hidden')) {
+        container.textContent = 'Could not load online scores. Check the Supabase setup and try again.';
+      }
+    }
+  }
+
+  _hideOnlineLeaderboard() {
+    document.getElementById('modal-online-leaderboard').classList.add('hidden');
+  }
+
+  async _submitOnlineScore(score) {
+    if (!isOnlineLeaderboardConfigured()) return;
+
+    try {
+      await submitOnlineScore(this.nickname, score);
+      this._setOnlineStatus('Online record saved.');
+    } catch (error) {
+      console.error('Could not save the online score.', error);
+      this._setOnlineStatus('Online record could not be saved. Check the Supabase setup.', true);
+    }
   }
 
   // ---- State machine ----
   startGame() {
+    if (!this.nickname) {
+      this._showProfileSetup();
+      return;
+    }
     this.board = createBoard();
     this.bag = [];
     this.nextQueue = [];
@@ -133,6 +311,8 @@ class TetrisGame {
   _gameOver() {
     this.state = 'gameover';
     const score = this.scoreManager.score;
+    recordScore(this.nickname, score);
+    this._submitOnlineScore(score);
     const isNew = saveHighScore(score);
     document.getElementById('go-score').textContent = score.toLocaleString();
     if (isNew) {
@@ -203,6 +383,8 @@ class TetrisGame {
 
   // ---- Input handling ----
   _handleAction(action, data) {
+    if (!document.getElementById('modal-profile').classList.contains('hidden')) return;
+
     // Settings toggle — works from any state
     if (action === 'settings') {
       if (this.settingsUI.isOpen()) {
