@@ -17,6 +17,7 @@ import {
   loadLeaderboard, recordScore, SettingsUI
 } from './settings.js';
 import { loadChangelog } from './changelog.js';
+import { createGameMode } from './game-modes.js';
 import {
   initializeOnlinePlayer, isOnlineLeaderboardConfigured,
   loadOnlineLeaderboard, submitOnlineScore
@@ -34,6 +35,7 @@ class TetrisGame {
 
     // Load settings
     this.settings = loadSettings();
+    this.gameMode = createGameMode('classic');
 
     // Initialize renderer
     this.renderer = new Renderer();
@@ -93,6 +95,7 @@ class TetrisGame {
     // Display highscore
     document.getElementById('highscore').textContent = loadHighScore().toLocaleString();
     this._updatePlayerName();
+    this._updateModeUI();
     loadChangelog();
     if (!isOnlineLeaderboardConfigured()) {
       this._setOnlineStatus('Online leaderboard is not configured.');
@@ -107,9 +110,44 @@ class TetrisGame {
     this._loop(0);
   }
 
+  _updateModeUI() {
+    const status = this.gameMode.getStatus();
+    const isTower = this.gameMode.id === 'tower' && status !== null;
+    document.body.classList.toggle('tower-mode', isTower);
+    document.getElementById('tower-status').classList.toggle('visible', isTower);
+
+    if (!isTower) return;
+    const altitude = `${status.altitude.toFixed(1)} m`;
+    const floor = String(status.floor);
+    const gridOffset = `${status.gridOffset}px`;
+    const gridSize = `${status.gridSize}px`;
+    const altitudeElement = document.getElementById('tower-altitude');
+    const floorElement = document.getElementById('tower-floor');
+    const rankElement = document.getElementById('tower-rank');
+    const progressElement = document.getElementById('tower-progress');
+
+    if (altitudeElement.textContent !== altitude) altitudeElement.textContent = altitude;
+    if (floorElement.textContent !== floor) floorElement.textContent = floor;
+    if (rankElement.textContent !== String(status.climbRank)) {
+      rankElement.textContent = status.climbRank;
+    }
+    progressElement.value = status.climbProgress / status.climbRequirement;
+    progressElement.setAttribute(
+      'aria-label',
+      `Climb rank ${status.climbRank}: ${status.climbProgress.toFixed(1)} of ${status.climbRequirement} progress`
+    );
+    if (document.body.style.getPropertyValue('--tower-grid-offset') !== gridOffset) {
+      document.body.style.setProperty('--tower-grid-offset', gridOffset);
+    }
+    if (document.body.style.getPropertyValue('--tower-grid-size') !== gridSize) {
+      document.body.style.setProperty('--tower-grid-size', gridSize);
+    }
+  }
+
   // ---- UI Binding ----
   _bindUI() {
-    document.getElementById('btn-start').addEventListener('click', () => this.startGame());
+    document.getElementById('btn-start').addEventListener('click', () => this.startGame('classic'));
+    document.getElementById('btn-start-tower').addEventListener('click', () => this.startGame('tower'));
     document.getElementById('btn-resume').addEventListener('click', () => this.resume());
     document.getElementById('btn-restart-pause').addEventListener('click', () => this.startGame());
     document.getElementById('btn-restart-go').addEventListener('click', () => this.startGame());
@@ -304,11 +342,14 @@ class TetrisGame {
   }
 
   // ---- State machine ----
-  startGame() {
+  startGame(modeId = this.gameMode.id) {
     if (!this.nickname) {
       this._showProfileSetup();
       return;
     }
+    this.gameMode = createGameMode(modeId);
+    this.gameMode.reset();
+    this._updateModeUI();
     this.board = createBoard();
     this.bag = [];
     this.nextQueue = [];
@@ -357,6 +398,8 @@ class TetrisGame {
 
   _showMenu() {
     this.state = 'menu';
+    this.gameMode = createGameMode('classic');
+    this._updateModeUI();
     this._showOverlay('start');
   }
 
@@ -596,6 +639,15 @@ class TetrisGame {
 
     // Score
     const { points, label, combo } = this.scoreManager.processLineClear(linesCleared, spinType);
+    if (this.gameMode.id === 'tower') {
+      this.gameMode.onClear({
+        linesCleared,
+        spinType,
+        combo,
+        backToBack: this.scoreManager.b2bCount > 1,
+      });
+      this._updateModeUI();
+    }
 
     // Show action label
     if (label && linesCleared > 0) {
@@ -634,8 +686,12 @@ class TetrisGame {
     const dt = Math.min(timestamp - this._lastTime, 100); // cap at 100ms
     this._lastTime = timestamp;
 
-    if (this.state === 'playing' && this.currentPiece) {
-      this._tick(dt);
+    if (this.state === 'playing') {
+      if (this.currentPiece) this._tick(dt);
+      if (this.state === 'playing') {
+        this.gameMode.update(dt);
+        this._updateModeUI();
+      }
     }
 
     // Always render for smooth 60fps
@@ -646,6 +702,7 @@ class TetrisGame {
       holding:      this.holdPiece,
       holdLocked:   this.holdLocked,
       nextQueue:    this.nextQueue,
+      towerGrid:    this.gameMode.id === 'tower' ? this.gameMode.getStatus() : null,
     });
   }
 

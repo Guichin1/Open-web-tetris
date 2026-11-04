@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div id="tower-background" aria-hidden="true"></div>
   <div id="app">
     <!-- LEFT PANEL: HOLD + STATS -->
     <aside id="panel-left">
@@ -27,6 +28,13 @@
       <div class="panel-block">
         <div class="panel-label">LEVEL</div>
         <div class="panel-value" id="level">1</div>
+      </div>
+      <div class="panel-block tower-status" id="tower-status" aria-live="polite">
+        <div class="panel-label">ALTITUDE</div>
+        <div class="panel-value" id="tower-altitude">0.0 m</div>
+        <div class="tower-floor">FLOOR <span id="tower-floor">1</span></div>
+        <div class="tower-floor">CLIMB RANK <span id="tower-rank">1</span></div>
+        <progress id="tower-progress" class="tower-progress" max="1" value="0" aria-label="Climb rank progress"></progress>
       </div>
       <div class="panel-block">
         <div class="panel-label">LINES</div>
@@ -81,7 +89,10 @@
             <div class="overlay-logo">TETRIS</div>
             <div class="overlay-subtitle">GUIDELINE EDITION</div>
             <div class="player-name" id="player-name"></div>
-            <button class="btn-primary" id="btn-start">▶ PLAY</button>
+            <div class="mode-select" aria-label="Choose a game mode">
+              <button class="btn-primary" id="btn-start">▶ CLASSIC</button>
+              <button class="btn-secondary" id="btn-start-tower">TOWER</button>
+            </div>
             <button class="btn-secondary" id="btn-leaderboard">LOCAL SCORES</button>
             <button class="btn-secondary" id="btn-online-leaderboard">ONLINE SCORES</button>
             <button class="btn-secondary" id="btn-settings-start">⚙ SETTINGS</button>
@@ -224,7 +235,7 @@
           </div>
           <div class="setting-control">
             <input type="range" id="sdf-slider" min="1" max="41" step="1" />
-            <input type="number" id="sdf-input" min="1" max="41" />
+            <input type="text" id="sdf-input" inputmode="numeric" maxlength="3" />
             <span class="setting-unit" id="sdf-unit">×</span>
           </div>
         </div>

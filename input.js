@@ -35,8 +35,18 @@ export class InputManager {
   }
 
   updateSettings(keybinds, handling) {
+    const activeDirection = this._dasDirection;
     this.keybinds = keybinds;
     this.handling = handling;
+    this._clearDAS();
+
+    const heldDirections = [...this._held]
+      .map(code => this._resolveAction(code))
+      .filter(action => action === 'moveLeft' || action === 'moveRight');
+    const direction = heldDirections.includes(activeDirection)
+      ? activeDirection
+      : heldDirections[0];
+    if (direction) this._startDAS(direction);
   }
 
   destroy() {

@@ -48,8 +48,27 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+#tower-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background-color: #080b14;
+  background-image:
+    linear-gradient(rgba(74, 158, 255, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74, 158, 255, 0.14) 1px, transparent 1px);
+  background-size: var(--tower-grid-size, 128px) var(--tower-grid-size, 128px);
+  background-position: 0 var(--tower-grid-offset, 0px);
+  transition: opacity 0.4s ease;
+}
+
+body.tower-mode #tower-background { opacity: 1; }
+
 /* ---- LAYOUT ---- */
 #app {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -96,6 +115,40 @@ aside {
   color: var(--text-bright);
   letter-spacing: -0.02em;
   line-height: 1;
+}
+
+.tower-status { display: none; }
+.tower-status.visible { display: block; }
+
+.tower-floor {
+  margin-top: 6px;
+  color: var(--text-dim);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.tower-floor span { color: var(--accent); }
+
+.tower-progress {
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin-top: 6px;
+  appearance: none;
+  border: 0;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.tower-progress::-webkit-progress-bar {
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.tower-progress::-webkit-progress-value,
+.tower-progress::-moz-progress-bar {
+  border-radius: 2px;
+  background: var(--accent);
 }
 
 .b2b-label {
@@ -245,7 +298,7 @@ aside {
 
 .start-menu {
   display: grid;
-  grid-template-columns: minmax(190px, 1fr) minmax(230px, 1.1fr) minmax(260px, 1.35fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
   gap: clamp(16px, 3vw, 36px);
   width: min(1120px, calc(100vw - 40px));
@@ -280,6 +333,8 @@ aside {
   flex-direction: column;
   align-items: center;
   gap: 14px;
+  justify-self: center;
+  width: min(100%, 260px);
 }
 
 .start-main .overlay-logo {
@@ -294,6 +349,14 @@ aside {
 .start-main .btn-primary,
 .start-main .btn-secondary {
   width: min(100%, 240px);
+}
+
+.mode-select {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
 }
 
 .start-updates {
@@ -829,15 +892,16 @@ aside {
   .controls-hint { display: none; }
   #block-b2b, #block-combo { display: none !important; }
   .start-menu {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: min(760px, calc(100vw - 24px));
     min-height: 0;
     margin: 12px auto;
     padding: 16px;
   }
-  .start-main { grid-column: 2; grid-row: 1 / span 2; }
-  .start-controls { grid-column: 1; grid-row: 1; }
-  .start-updates { grid-column: 1; grid-row: 2; }
+  #overlay-start { align-items: flex-start; }
+  .start-main { grid-column: 1 / -1; grid-row: 1; }
+  .start-controls { grid-column: 1; grid-row: 2; }
+  .start-updates { grid-column: 2; grid-row: 2; }
   .changelog-content { max-height: 24vh; }
 }
 
@@ -900,6 +964,8 @@ aside {
 }
 
 @media (max-height: 700px) {
+  #overlay-start { align-items: flex-start; }
+  .start-menu { margin: 12px auto; }
   .controls-hint,
   #block-b2b,
   #block-combo { display: none !important; }
@@ -919,8 +985,11 @@ aside {
     margin-bottom: 2px;
   }
   .panel-value {
-    font-size: 16px;
+    font-size: 14px;
   }
+  aside { gap: 4px; }
+  .tower-floor { margin-top: 3px; }
+  .tower-progress { margin-top: 3px; }
   #canvas-hold {
     width: auto !important;
     height: auto !important;

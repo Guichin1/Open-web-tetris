@@ -83,12 +83,42 @@ function drawGhostCell(ctx, x, y, size, color) {
   ctx.globalAlpha = 1;
 }
 
-function drawEmptyCell(ctx, x, y, size) {
-  ctx.fillStyle = '#0a0a10';
+function drawEmptyCell(ctx, x, y, size, towerMode) {
+  ctx.fillStyle = towerMode ? 'rgba(10, 10, 16, 0.42)' : '#0a0a10';
   ctx.fillRect(x, y, size, size);
-  // Subtle grid dot at center
-  ctx.fillStyle = '#18182a';
-  ctx.fillRect(x + Math.floor(size/2), y + Math.floor(size/2), 1, 1);
+  if (!towerMode) {
+    ctx.fillStyle = '#18182a';
+    ctx.fillRect(x + Math.floor(size/2), y + Math.floor(size/2), 1, 1);
+  }
+}
+
+function drawTowerGrid(ctx, width, height, size, offset) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(74, 158, 255, 0.62)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+
+  const horizontalOffset = (offset * 0.2) % size;
+  for (let x = horizontalOffset; x <= width; x += size) {
+    ctx.moveTo(x + 0.5, 0);
+    ctx.lineTo(x + 0.5, height);
+  }
+  for (let x = horizontalOffset - size; x >= 0; x -= size) {
+    ctx.moveTo(x + 0.5, 0);
+    ctx.lineTo(x + 0.5, height);
+  }
+
+  for (let y = offset % size; y <= height; y += size) {
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(width, y + 0.5);
+  }
+  for (let y = (offset % size) - size; y >= 0; y -= size) {
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(width, y + 0.5);
+  }
+
+  ctx.stroke();
+  ctx.restore();
 }
 
 // ---- Mini piece for hold/next panels ----
@@ -209,7 +239,7 @@ export class Renderer {
 
   get cellSize() { return this._cellSize; }
 
-  render({ board, currentPiece, ghostPiece, holding, holdLocked, nextQueue }) {
+  render({ board, currentPiece, ghostPiece, holding, holdLocked, nextQueue, towerGrid = null }) {
     if (!board) return;
 
     const ctx = this.boardCtx;
@@ -220,6 +250,10 @@ export class Renderer {
     // Always clear and redraw for smooth 60fps animation
     ctx.clearRect(0, 0, W, H);
 
+    if (towerGrid) {
+      drawTowerGrid(ctx, W, H, towerGrid.gridSize, towerGrid.gridOffset);
+    }
+
     // Draw board cells - tight loop
     for (let r = 0; r < VISIBLE_ROWS; r++) {
       const boardRow = r + BUFFER_ROWS;
@@ -229,7 +263,7 @@ export class Renderer {
         if (cell) {
           drawCell(ctx, x, y, cs, PIECE_COLORS[cell]);
         } else {
-          drawEmptyCell(ctx, x, y, cs);
+          drawEmptyCell(ctx, x, y, cs, towerGrid !== null);
         }
       }
     }

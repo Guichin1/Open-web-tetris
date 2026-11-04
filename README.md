@@ -22,6 +22,7 @@ A complete, technically precise Tetris implementation in pure HTML/CSS/JS — no
 - ✅ **Local leaderboard** — top 10 scores saved in the current browser
 - ✅ **Online leaderboard** — top 10 personal bests, with a persistent anonymous player ID
 - ✅ **Start screen changelog** — loaded automatically from `CHANGELOG.MD`
+- ✅ **Classic and Tower modes** — Tower displays altitude and floors, with a scrolling grid, clear bonuses, and climb-rank progression
 
 ## Default Keybinds
 

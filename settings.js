@@ -51,6 +51,26 @@ export const DEFAULT_HANDLING = {
   sdf: 20,   // × (41 = ∞)
 };
 
+const HANDLING_RANGES = {
+  das: [0, 300],
+  arr: [0, 100],
+  dcd: [0, 200],
+  sdf: [1, 41],
+};
+
+function normalizeHandling(handling = {}) {
+  const values = handling && typeof handling === 'object' ? handling : {};
+  return Object.fromEntries(
+    Object.entries(HANDLING_RANGES).map(([key, [min, max]]) => {
+      const value = values[key];
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        return [key, DEFAULT_HANDLING[key]];
+      }
+      return [key, Math.max(min, Math.min(max, Math.round(value)))];
+    })
+  );
+}
+
 /** Load settings from localStorage, merging with defaults. */
 export function loadSettings() {
   try {
@@ -65,7 +85,7 @@ export function loadSettings() {
     const saved = JSON.parse(raw);
     return {
       keybinds: { ...DEFAULT_KEYBINDS, ...(saved.keybinds || {}) },
-      handling: { ...DEFAULT_HANDLING, ...(saved.handling || {}) },
+      handling: normalizeHandling(saved.handling),
       saveOnlineScores: saved.saveOnlineScores === true,
     };
   } catch {
@@ -210,7 +230,16 @@ export class SettingsUI {
       const input  = document.getElementById(inputId);
 
       const update = (val) => {
-        val = Math.max(parseInt(slider.min), Math.min(parseInt(slider.max), parseInt(val) || 0));
+        const normalized = String(val).trim();
+        if (key === 'sdf' && normalized === '∞') {
+          val = 41;
+        } else if (/^\d+$/.test(normalized)) {
+          val = Number(normalized);
+        } else {
+          this._syncHandlingInputs(this.settings.handling);
+          return;
+        }
+        val = Math.max(Number(slider.min), Math.min(Number(slider.max), val));
         this.settings.handling[key] = val;
         slider.value = val;
         input.value = key === 'sdf' && val === 41 ? '∞' : val;
